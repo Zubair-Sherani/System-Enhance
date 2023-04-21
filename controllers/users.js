@@ -1,9 +1,15 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const keys = require("../config/keys");
+
 
 // Load User model
 const User = require("../models/UserSchema");
+
+// Load sendMail
+const { sendMail } = require("../mail")
+
+// Load email templates
+const templates = require('../mail_templates/templates');
 
 // @route POST api/users/register
 // @desc Register user
@@ -27,9 +33,15 @@ const register = (req, res) => {
                 bcrypt.hash(newUser.password, salt, (err, hash) => {
                     if (err) throw err;
                     newUser.password = hash;
+                    const signUp = templates.signUp;
+                    const signInToAccount = templates.signInToAccount
                     newUser
                         .save()
                         .then(user => res.json(user))
+                        .then(sendMail(email, signUp.subject, signUp.html))
+                        .then(setTimeout(() => {
+                            sendMail(email, signInToAccount.subject, signInToAccount.html);
+                          }, 2000))
                         .catch(err => console.log(err));
                 });
             });
@@ -66,7 +78,7 @@ const login = (req, res) => {
                 // Sign token
                 jwt.sign(
                     payload,
-                    keys.secretOrKey,
+                    process.env.JWT_SECRET,
                     {
                         expiresIn: 31556926
                     },
@@ -77,6 +89,8 @@ const login = (req, res) => {
                         });
                     }
                 );
+                const signIn = templates.signIn;
+                sendMail(email, signIn.subject, signIn.html);
             } else {
                 return res
                     .status(400)

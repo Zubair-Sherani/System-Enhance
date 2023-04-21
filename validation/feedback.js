@@ -1,6 +1,10 @@
 const { body, validationResult } = require('express-validator');
 
 const feedbackValidation = [
+    body('_id')
+      .trim()
+      .isLength({ min: 24, max: 24 })
+      .withMessage('Id is invalid'),
     // Validate the subject field
     body('subject')
       .trim()
@@ -14,7 +18,7 @@ const feedbackValidation = [
       .withMessage('Description should be between 100 to 5000 characters long'),
     (req, res, next) => {
         // Check for validation errors
-        const errors = validationResult(req);
+        const errors = validationResult(req); 
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
